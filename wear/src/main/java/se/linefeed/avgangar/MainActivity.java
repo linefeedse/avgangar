@@ -1,4 +1,4 @@
-package se.linefeed.fork;
+package se.linefeed.avgangar;
 
 import android.app.Activity;
 import android.content.Intent;
