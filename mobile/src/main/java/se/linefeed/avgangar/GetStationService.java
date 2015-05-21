@@ -44,7 +44,6 @@ public class GetStationService extends WearableListenerService implements
 
         }
 
-        Log.d(TAG,"onStartCommand without intent");
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)

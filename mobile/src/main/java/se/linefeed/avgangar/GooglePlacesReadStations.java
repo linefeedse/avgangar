@@ -15,9 +15,6 @@ import net.sf.sprockets.google.Places;
 
 import java.util.List;
 
-/**
- * Created by torkel on 15-05-19.
- */
 public class GooglePlacesReadStations extends AsyncTask<Object, Integer, List<Place>> {
 
     protected static final String TAG = "GooglePlacesReadSt";

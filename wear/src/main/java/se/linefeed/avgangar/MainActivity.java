@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -99,8 +101,6 @@ public class MainActivity extends Activity
         Wearable.NodeApi.addListener(mGoogleApiClient, this);
         Wearable.DataApi.addListener(mGoogleApiClient, this);
 
-        //Intent intent = new Intent(MainActivity.this, StationListenerService.class);
-        //startService(intent);
         Wearable.MessageApi.addListener(mGoogleApiClient, new MessageApi.MessageListener() {
             @Override
             public void onMessageReceived(MessageEvent messageEvent) {
@@ -137,6 +137,14 @@ public class MainActivity extends Activity
             @Override
             public void run() {
                 stnAdapter.notifyDataSetChanged();
+                mListView.setClickable(true);
+                mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        Object o = mListView.getItemAtPosition(position);
+                        Log.d(TAG,"Clicked station" + o.toString());
+                    }
+                });
             }
         });
 
