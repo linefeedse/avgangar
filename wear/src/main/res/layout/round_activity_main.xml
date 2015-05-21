@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" tools:context=".MainActivity" tools:deviceIds="wear_round">
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/stationListView"
+        android:clickable="true"
+        android:drawSelectorOnTop="true"
+        android:footerDividersEnabled="false"
+        android:headerDividersEnabled="false"
+        android:smoothScrollbar="false"
+        android:focusable="true"
+        android:layout_alignParentTop="true"
+        android:longClickable="false"
+        android:stackFromBottom="false"
+        android:paddingStart="32dp" />
+
+</RelativeLayout>
