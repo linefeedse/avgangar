@@ -1,7 +1,6 @@
 package se.linefeed.avgangar;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
@@ -9,7 +8,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -23,7 +21,6 @@ import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
-
 import java.util.ArrayList;
 
 public class MainActivity extends Activity
@@ -111,10 +108,12 @@ public class MainActivity extends Activity
                 Log.d(TAG, "Message for path " + path);
                 if (path.equals(PATH_STATION_INFO)) {
                     showStations(dataMap);
+                } else if (path.equals(PATH_STATION_INFO + "/Departures")) {
+                    showDepartures(dataMap);
                 }
             }
         });
-        stnArr.add(0, ".....");
+        stnArr.add(0, "...");
         stnAdapter.notifyDataSetChanged();
         askForStations();
 
@@ -142,7 +141,36 @@ public class MainActivity extends Activity
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         Object o = mListView.getItemAtPosition(position);
-                        Log.d(TAG,"Clicked station" + o.toString());
+                        Log.d(TAG, "Clicked station " + o.toString());
+                        askForAvgangar(o.toString());
+                    }
+                });
+            }
+        });
+
+    }
+
+    private void showDepartures(DataMap dataMap) {
+        String[] departure = new String[dataMap.keySet().size()];
+        for (String key : dataMap.keySet()) {
+            int order = Integer.parseInt(dataMap.getString(key));
+            if (order <= dataMap.keySet().size()) {
+                departure[order] = key;
+            }
+        }
+        stnArr.clear();
+        int listIndex = 0;
+        for (String dep : departure) {
+            Log.d(TAG,dep);
+            stnArr.add(listIndex++,dep);
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stnAdapter.notifyDataSetChanged();
+                mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     }
                 });
             }
@@ -155,8 +183,23 @@ public class MainActivity extends Activity
                 .setResultCallback(new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
                     public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                        Log.d(TAG,"SendRequireMessage:" + sendMessageResult.getStatus());
+                        Log.d(TAG, "SendRequireMessage: " + sendMessageResult.getStatus());
                     }
+                });
+    }
+    private void askForAvgangar(String station) {
+        stnArr.clear();
+        stnArr.add("---");
+        stnAdapter.notifyDataSetChanged();
+        DataMap dataMap = new DataMap();
+        dataMap.putString("station",station);
+        Wearable.MessageApi.sendMessage(mGoogleApiClient, "", "/GetStationService/Station", dataMap.toByteArray())
+                .setResultCallback(new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        Log.d(TAG, "SendStationRequest: " + sendMessageResult.getStatus());
+                    }
+
                 });
     }
 }

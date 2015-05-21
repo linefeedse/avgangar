@@ -15,6 +15,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
@@ -58,9 +59,12 @@ public class GetStationService extends WearableListenerService implements
     @Override
     public void onMessageReceived(MessageEvent mEvent) {
         mPeerId = mEvent.getSourceNodeId();
-        Log.d(TAG,"Message from " + mPeerId + " for path " + mEvent.getPath());
+        Log.d(TAG, "Message from " + mPeerId + " for path " + mEvent.getPath());
         if (mEvent.getPath().equals("/GetStationService/Require")) {
             readStations();
+        } else if (mEvent.getPath().equals("/GetStationService/Station")) {
+            DataMap dataMap = DataMap.fromByteArray(mEvent.getData());
+            readAvgangar(dataMap);
         }
     }
     @Override
@@ -131,5 +135,14 @@ public class GetStationService extends WearableListenerService implements
         } else {
             Log.d(TAG,"readStations called too early - no location yet");
         }
+    }
+    protected void readAvgangar(DataMap dataMap) {
+        GooglePlacesReadAvgangar readAvgangarTask = new GooglePlacesReadAvgangar();
+        Object passObj[] = new Object[3];
+        String station = dataMap.getString("station");
+        passObj[0] = station;
+        passObj[1] = mGoogleApiClient;
+        passObj[2] = mPeerId;
+        readAvgangarTask.execute(passObj);
     }
 }

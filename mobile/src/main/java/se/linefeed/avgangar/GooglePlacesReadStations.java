@@ -63,7 +63,6 @@ public class GooglePlacesReadStations extends AsyncTask<Object, Integer, List<Pl
                         @Override
                         public void onResult(MessageApi.SendMessageResult sendMessageResult) {
                             Log.d(TAG,"SendUpdateMessage: " + sendMessageResult.getStatus());
-                            //mGoogleApiClient.disconnect();
                         }
                     }
             );
@@ -76,8 +75,5 @@ public class GooglePlacesReadStations extends AsyncTask<Object, Integer, List<Pl
     }
     @Override
     protected void onPostExecute(List<Place> places) {
-        for (Place place : places) {
-            Log.d(TAG, place.getName() + " - " + place.getVicinity());
-        }
     }
 }
