@@ -36,6 +36,7 @@ public class MainActivity extends Activity
     protected static final String PATH_STATION_INFO = "/GetStationService";
     public ArrayList<String> stnArr;
     public ArrayAdapter<String> stnAdapter;
+    private boolean isConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +60,6 @@ public class MainActivity extends Activity
                         android.R.layout.simple_list_item_1,
                         stnArr);
                 mListView.setAdapter(stnAdapter);
-                Log.d(TAG, "Adapter has been set");
             }
         });
 
@@ -69,19 +69,16 @@ public class MainActivity extends Activity
         for (int i = 0; i < dataEvents.getCount(); i++) {
             DataEvent event = dataEvents.get(i);
             DataMap dataMap = DataMap.fromByteArray(event.getDataItem().getData());
-            Log.d(TAG,"onDataChanged: " + dataMap);
 
         }
     }
     @Override
     public void onPeerConnected(Node node) {
-        Log.d(TAG,"PeerConnected: " + node);
         askForStations();
     }
 
     @Override
     public void onPeerDisconnected(Node node) {
-        Log.d(TAG, "PeerDisconnected: " + node);
     }
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
@@ -90,7 +87,6 @@ public class MainActivity extends Activity
     }
     @Override
     public void onConnectionSuspended(int i) {
-        Log.d(TAG, "ConnectionSuspended: " + i);
     }
     @Override
     public void onConnected(Bundle bundle) {
@@ -101,11 +97,9 @@ public class MainActivity extends Activity
         Wearable.MessageApi.addListener(mGoogleApiClient, new MessageApi.MessageListener() {
             @Override
             public void onMessageReceived(MessageEvent messageEvent) {
-                Log.d(TAG, "onMessageReceived: " + messageEvent);
 
                 DataMap dataMap = DataMap.fromByteArray(messageEvent.getData());
                 String path = messageEvent.getPath();
-                Log.d(TAG, "Message for path " + path);
                 if (path.equals(PATH_STATION_INFO)) {
                     showStations(dataMap);
                 } else if (path.equals(PATH_STATION_INFO + "/Departures")) {
@@ -113,10 +107,24 @@ public class MainActivity extends Activity
                 }
             }
         });
+        isConnected = true;
         stnArr.add(0, "...");
         stnAdapter.notifyDataSetChanged();
         askForStations();
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (isConnected) {
+            if (mGoogleApiClient.isConnected()) {
+                stnArr.clear();
+                stnArr.add("...");
+                stnAdapter.notifyDataSetChanged();
+                askForStations();
+            }
+        }
     }
 
     private void showStations(DataMap dataMap) {
@@ -129,7 +137,6 @@ public class MainActivity extends Activity
         }
         int listIndex = 0;
         for (String station : stations) {
-            Log.d(TAG,station);
             stnArr.add(listIndex++,station);
         }
         runOnUiThread(new Runnable() {
@@ -141,7 +148,6 @@ public class MainActivity extends Activity
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         Object o = mListView.getItemAtPosition(position);
-                        Log.d(TAG, "Clicked station " + o.toString());
                         askForAvgangar(o.toString());
                     }
                 });
@@ -161,7 +167,6 @@ public class MainActivity extends Activity
         stnArr.clear();
         int listIndex = 0;
         for (String dep : departure) {
-            Log.d(TAG,dep);
             stnArr.add(listIndex++,dep);
         }
         runOnUiThread(new Runnable() {
@@ -183,7 +188,6 @@ public class MainActivity extends Activity
                 .setResultCallback(new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
                     public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                        Log.d(TAG, "SendRequireMessage: " + sendMessageResult.getStatus());
                     }
                 });
     }
@@ -197,7 +201,6 @@ public class MainActivity extends Activity
                 .setResultCallback(new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
                     public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                        Log.d(TAG, "SendStationRequest: " + sendMessageResult.getStatus());
                     }
 
                 });

@@ -3,12 +3,13 @@ package se.linefeed.avgangar;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -16,24 +17,24 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
-/**
- * Created by torkel on 15-05-19.
- */
 public class GetStationService extends WearableListenerService implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener
 {
     private static final String TAG = "GetStationService";
-    private static final long FASTEST_INTERVAL_MS = 1000;
-    private static final long UPDATE_INTERVAL_MS = 5000;
+    private static final long FASTEST_INTERVAL_MS = 5000;
+    private static final long UPDATE_INTERVAL_MS = 30000;
     private GoogleApiClient mGoogleApiClient;
     private String mPeerId;
     private Location lastLocation;
+    protected static final String PATH_STATION_INFO = "/GetStationService";
+
 
     @Override
     public int onStartCommand( Intent intent, int flags, int startId )
@@ -41,10 +42,13 @@ public class GetStationService extends WearableListenerService implements
         if ( intent != null )
         {
                 mPeerId = intent.getStringExtra( "PeerId" );
-                Log.d(TAG,"onStartCommand PeerId" + mPeerId);
-
         }
 
+        connectApiClient();
+        return super.onStartCommand( intent, flags, startId );
+    }
+
+    protected void connectApiClient() {
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -54,23 +58,26 @@ public class GetStationService extends WearableListenerService implements
                     .build();
         }
         mGoogleApiClient.connect();
-        return super.onStartCommand( intent, flags, startId );
     }
     @Override
     public void onMessageReceived(MessageEvent mEvent) {
         mPeerId = mEvent.getSourceNodeId();
-        Log.d(TAG, "Message from " + mPeerId + " for path " + mEvent.getPath());
         if (mEvent.getPath().equals("/GetStationService/Require")) {
-            readStations();
+            if (mGoogleApiClient.isConnected())
+                readStations();
+            else
+                notifyNoConnection();
         } else if (mEvent.getPath().equals("/GetStationService/Station")) {
             DataMap dataMap = DataMap.fromByteArray(mEvent.getData());
-            readAvgangar(dataMap);
+            try {
+                readAvgangar(dataMap);
+            }
+            catch (PackageManager.NameNotFoundException e) {}
+
         }
     }
     @Override
     public void onConnected(Bundle connectionHint) {
-        Log.i(TAG, "GoogleApiClient connected");
-        // TODO: Start making API requests.
         LocationRequest locationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
                 .setInterval(UPDATE_INTERVAL_MS)
@@ -117,15 +124,11 @@ public class GetStationService extends WearableListenerService implements
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
-            Log.i(TAG, "location was provided by " + location.getProvider());
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,this);
             lastLocation = location;
         }
     }
     protected void readStations() {
         if (lastLocation != null) {
-            Log.i(TAG, "Latitude: " + lastLocation.getLatitude() + " Longitude: " + lastLocation.getLongitude());
-
             GooglePlacesReadStations readStationTask = new GooglePlacesReadStations();
             Object[] passObj = new Object[3];
             passObj[0] = lastLocation;
@@ -136,13 +139,27 @@ public class GetStationService extends WearableListenerService implements
             Log.d(TAG,"readStations called too early - no location yet");
         }
     }
-    protected void readAvgangar(DataMap dataMap) {
+    protected void readAvgangar(DataMap dataMap) throws PackageManager.NameNotFoundException {
         GooglePlacesReadAvgangar readAvgangarTask = new GooglePlacesReadAvgangar();
-        Object passObj[] = new Object[3];
+        Object passObj[] = new Object[4];
         String station = dataMap.getString("station");
         passObj[0] = station;
         passObj[1] = mGoogleApiClient;
         passObj[2] = mPeerId;
+        ApplicationInfo ai = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
+        Bundle bundle = ai.metaData;
+        passObj[3] = bundle;
         readAvgangarTask.execute(passObj);
+    }
+    protected void notifyNoConnection() {
+        DataMap msgmap = new DataMap();
+        msgmap.putString("Location not available. X-P", "0");
+        Wearable.MessageApi.sendMessage(mGoogleApiClient,mPeerId,PATH_STATION_INFO, msgmap.toByteArray()).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                    }
+                }
+        );
     }
 }

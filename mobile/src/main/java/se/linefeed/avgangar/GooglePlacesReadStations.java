@@ -26,8 +26,6 @@ public class GooglePlacesReadStations extends AsyncTask<Object, Integer, List<Pl
         final GoogleApiClient mGoogleApiClient = (GoogleApiClient) obj[1];
         Location location = (Location) obj[0];
         Places.Response<List<Place>> resp = null;
-        Log.d(TAG,"asking for bus_station with radius 500 around "
-                + location.getLatitude() + "," + location.getLongitude());
         try {
             resp = Places.nearbySearch(new Places.Params().location(
                             location.getLatitude(),
@@ -50,19 +48,15 @@ public class GooglePlacesReadStations extends AsyncTask<Object, Integer, List<Pl
         }
 
         if (status == Places.Response.Status.OK && places != null) {
-            Log.d(TAG,"have some places");
             DataMap placemap = new DataMap();
             int order = 0;
             for (Place place : places) {
                 placemap.putString(place.getName(),Integer.toString(order++));
-                Log.i(TAG, place.getName());
             }
-            Log.d(TAG, "Sending update message to " + mPeerId + " for path " + PATH_STATION_INFO);
             Wearable.MessageApi.sendMessage(mGoogleApiClient,mPeerId,PATH_STATION_INFO, placemap.toByteArray()).setResultCallback(
                     new ResultCallback<MessageApi.SendMessageResult>() {
                         @Override
                         public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                            Log.d(TAG,"SendUpdateMessage: " + sendMessageResult.getStatus());
                         }
                     }
             );

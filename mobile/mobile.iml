@@ -97,8 +97,8 @@
     <orderEntry type="library" exported="" name="commons-primitives-1.0" level="project" />
     <orderEntry type="library" exported="" name="play-services-maps-7.3.0" level="project" />
     <orderEntry type="library" exported="" name="commons-lang-2.6" level="project" />
-    <orderEntry type="library" exported="" name="commons-collections-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-22.1.1" level="project" />
+    <orderEntry type="library" exported="" name="commons-collections-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="okhttp-2.3.0" level="project" />
     <orderEntry type="library" exported="" name="guava-18.0" level="project" />
     <orderEntry type="library" exported="" name="gson-2.3.1" level="project" />
